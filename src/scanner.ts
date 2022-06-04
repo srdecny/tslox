@@ -1,4 +1,4 @@
-import { Token, Error, TokenType, KeywordTokenType } from "./types";
+import { Token, Error, TokenType } from "./types";
 
 interface ScanResult {
   tokens: Token[];
@@ -17,25 +17,24 @@ interface ScanTokenError {
 
 type ScanTokenResult = ScanTokenSuccess | ScanTokenError;
 
-const keywords: { [key: string]: KeywordTokenType } = {
-  "and": TokenType.AND,
-  "class": TokenType.CLASS,
-  "else": TokenType.ELSE,
-  "false": TokenType.FALSE,
-  "for": TokenType.FOR,
-  "fun": TokenType.FUN,
-  "if": TokenType.IF,
-  "nil": TokenType.NIL,
-  "or": TokenType.OR,
-  "print": TokenType.PRINT,
-  "return": TokenType.RETURN,
-  "super": TokenType.SUPER,
-  "this": TokenType.THIS,
-  "true": TokenType.TRUE,
-  "var": TokenType.VAR,
-  "while": TokenType.WHILE,
+const keywords: { [key: string]: TokenType } = {
+  and: TokenType.AND,
+  class: TokenType.CLASS,
+  else: TokenType.ELSE,
+  false: TokenType.FALSE,
+  for: TokenType.FOR,
+  fun: TokenType.FUN,
+  if: TokenType.IF,
+  nil: TokenType.NIL,
+  or: TokenType.OR,
+  print: TokenType.PRINT,
+  return: TokenType.RETURN,
+  super: TokenType.SUPER,
+  this: TokenType.THIS,
+  true: TokenType.TRUE,
+  var: TokenType.VAR,
+  while: TokenType.WHILE,
 };
-
 
 export const scan = (source: string): ScanResult => {
   let current = 0;
@@ -56,7 +55,7 @@ export const scan = (source: string): ScanResult => {
     current + 1 >= source.length ? "\0" : source[current + 1];
   const match = (expected: string) => {
     if (expected.length + current > source.length) return false;
-    const isMatch = source.substring(current, expected.length) === expected;
+    const isMatch = source.substring(current, current + expected.length) === expected;
     return (isMatch && ((current += expected.length), true)) || false;
   };
 
@@ -87,6 +86,24 @@ export const scan = (source: string): ScanResult => {
     };
   };
 
+  const scanMultilineComment = (): ScanTokenError | undefined => {
+    while (!isAtEnd()) {
+      if (peek() == "\n") line++;
+      if (peek() == "*" && peekNext() == "/") {
+        current += 2;
+        return undefined;
+      }
+      advance();
+    }
+    return {
+      kind: "error",
+      error: {
+        line,
+        message: "Unterminated multiline comment.",
+      },
+    };
+  };
+
   const scanIdentifier = (initialChar: string): ScanTokenResult => {
     while (isAlphaNumeric(peek())) initialChar += advance();
     if (keywords.hasOwnProperty(initialChar)) {
@@ -110,8 +127,7 @@ export const scan = (source: string): ScanResult => {
         },
       };
     }
-  }
-  
+  };
 
   const scanNumber = (initialDigit: string): ScanTokenResult => {
     while (isDigit(peek())) initialDigit += advance();
@@ -199,10 +215,13 @@ export const scan = (source: string): ScanResult => {
           if (match("/")) {
             while (peek() !== "\n" && !isAtEnd()) advance();
             break; // Comment discarded, scan again
+          } else if (match("*")) {
+            const maybeError = scanMultilineComment();
+            maybeError && errors.push(maybeError.error);
+            break;
           } else {
             return prepareToken(TokenType.SLASH);
           }
-        // MULTICHARACTER TOKEN
         case '"':
           return scanString();
         // WHITESPACE
@@ -218,7 +237,7 @@ export const scan = (source: string): ScanResult => {
             return scanNumber(c);
           }
           if (isAlpha(c)) {
-            return scanIdentifier(c)
+            return scanIdentifier(c);
           }
 
           return {
