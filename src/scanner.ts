@@ -1,76 +1,251 @@
-import { Token, Error, TokenType } from "./types"
+import { Token, Error, TokenType, KeywordTokenType } from "./types";
 
-interface ScanSuccess {
-    state: "success",
-    tokens: Token[]
+interface ScanResult {
+  tokens: Token[];
+  errors: Error[];
 }
 
-interface ScanError {
-    state: "error",
-    error: Error
+interface ScanTokenSuccess {
+  kind: "success";
+  token: Token;
 }
 
-export const scan = (source: string): ScanSuccess | ScanError => {
+interface ScanTokenError {
+  kind: "error";
+  error: Error;
+}
 
-    let current = 0;
-    let start = 0;
-    let line = 1;
+type ScanTokenResult = ScanTokenSuccess | ScanTokenError;
 
-    let tokens: Token[] = []
+const keywords: { [key: string]: KeywordTokenType } = {
+  "and": TokenType.AND,
+  "class": TokenType.CLASS,
+  "else": TokenType.ELSE,
+  "false": TokenType.FALSE,
+  "for": TokenType.FOR,
+  "fun": TokenType.FUN,
+  "if": TokenType.IF,
+  "nil": TokenType.NIL,
+  "or": TokenType.OR,
+  "print": TokenType.PRINT,
+  "return": TokenType.RETURN,
+  "super": TokenType.SUPER,
+  "this": TokenType.THIS,
+  "true": TokenType.TRUE,
+  "var": TokenType.VAR,
+  "while": TokenType.WHILE,
+};
 
-    const isAtEnd = () => current >= source.length;
 
-    const advance = () => source[current++];
+export const scan = (source: string): ScanResult => {
+  let current = 0;
+  let start = 0;
+  let line = 1;
 
-    const scanToken = (): Token | null => {
-        const c = advance();
-        switch (c) {
-            case "(":
-                return { type: TokenType.LEFT_PAREN, lexeme: c, literal: null, line };
-            case ")":
-                return { type: TokenType.RIGHT_PAREN, lexeme: c, literal: null, line };
-            case "{":
-                return { type: TokenType.LEFT_BRACE, lexeme: c, literal: null, line };
-            case "}":
-                return { type: TokenType.RIGHT_BRACE, lexeme: c, literal: null, line };
-            case ",":
-                return { type: TokenType.COMMA, lexeme: c, literal: null, line };
-            case ".":
-                return { type: TokenType.DOT, lexeme: c, literal: null, line };
-            case "-":
-                return { type: TokenType.MINUS, lexeme: c, literal: null, line };
-            case "+":
-                return { type: TokenType.PLUS, lexeme: c, literal: null, line };
-            case ";":
-                return { type: TokenType.SEMICOLON, lexeme: c, literal: null, line };
-            case "*":
-                return { type: TokenType.STAR, lexeme: c, literal: null, line };
-            case "!":
-                return { type: TokenType.BANG, lexeme: c, literal: null, line };
-            case "=":
-                return { type: TokenType.EQUAL, lexeme: c, literal: null, line };
-            case ">":
-                return { type: TokenType.GREATER, lexeme: c, literal: null, line };
-            case "<":
-                return { type: TokenType.LESS, lexeme: c, literal: null, line };
-            default:
-                return null;
-        }
+  let tokens: Token[] = [];
+  let errors: Error[] = [];
+
+  const isDigit = (c: string) => /[0-9]/.test(c);
+  const isAlpha = (c: string) => /[a-zA-Z_]/.test(c);
+  const isAlphaNumeric = (c: string) => isAlpha(c) || isDigit(c);
+
+  const isAtEnd = () => current >= source.length;
+  const advance = () => source[current++];
+  const peek = () => (isAtEnd() ? "\0" : source[current]);
+  const peekNext = () =>
+    current + 1 >= source.length ? "\0" : source[current + 1];
+  const match = (expected: string) => {
+    if (expected.length + current > source.length) return false;
+    const isMatch = source.substring(current, expected.length) === expected;
+    return (isMatch && ((current += expected.length), true)) || false;
+  };
+
+  const scanString = (): ScanTokenResult => {
+    let str = "";
+    while (peek() !== '"' && !isAtEnd()) {
+      if (peek() === "\n") line++;
+      str += advance();
     }
-
-    while (!isAtEnd()) {
-        const maybeToken = scanToken();
-        if (maybeToken) {
-            tokens.push(maybeToken);
-        } else {
-            return { state: "error", error: { line, message: "Unexpected character", where: source[current] } };
-        }
+    if (isAtEnd()) {
+      return {
+        kind: "error",
+        error: {
+          line,
+          message: "Unterminated string.",
+        },
+      };
     }
+    advance(); // closing ""
+    return {
+      kind: "success",
+      token: {
+        type: TokenType.STRING,
+        lexeme: str,
+        literal: str,
+        line,
+      },
+    };
+  };
 
-    tokens.push({ type: TokenType.EOF, lexeme: "", literal: null, line });
+  const scanIdentifier = (initialChar: string): ScanTokenResult => {
+    while (isAlphaNumeric(peek())) initialChar += advance();
+    if (keywords.hasOwnProperty(initialChar)) {
+      return {
+        kind: "success",
+        token: {
+          type: keywords[initialChar],
+          lexeme: initialChar,
+          literal: null,
+          line,
+        },
+      };
+    } else {
+      return {
+        kind: "success",
+        token: {
+          type: TokenType.IDENTIFIER,
+          lexeme: initialChar,
+          literal: null,
+          line,
+        },
+      };
+    }
+  }
+  
+
+  const scanNumber = (initialDigit: string): ScanTokenResult => {
+    while (isDigit(peek())) initialDigit += advance();
+    if (peek() === ".") {
+      if (isDigit(peekNext())) {
+        initialDigit += advance();
+        while (isDigit(peek())) initialDigit += advance();
+      } else {
+        return {
+          kind: "error",
+          error: {
+            line,
+            message: "Invalid number.",
+          },
+        };
+      }
+    }
+    const num = parseFloat(initialDigit);
+    console.log(num);
 
     return {
-        state: "success",
-        tokens
+      kind: "success",
+      token: {
+        type: TokenType.NUMBER,
+        lexeme: initialDigit,
+        literal: num,
+        line,
+      },
+    };
+  };
+
+  const scanToken = (): ScanTokenResult => {
+    let c = "";
+    const prepareToken = (type: TokenType) => {
+      return {
+        kind: "success",
+        token: {
+          type,
+          lexeme: c,
+          literal: null,
+          line,
+        },
+      } as ScanTokenSuccess;
+    };
+    while (true) {
+      c = advance();
+      switch (c) {
+        case "(":
+          return prepareToken(TokenType.LEFT_PAREN);
+        case ")":
+          return prepareToken(TokenType.RIGHT_PAREN);
+        case "{":
+          return prepareToken(TokenType.LEFT_BRACE);
+        case "}":
+          return prepareToken(TokenType.RIGHT_BRACE);
+        case ",":
+          return prepareToken(TokenType.COMMA);
+        case ".":
+          return prepareToken(TokenType.DOT);
+        case "-":
+          return prepareToken(TokenType.MINUS);
+        case "+":
+          return prepareToken(TokenType.PLUS);
+        case ";":
+          return prepareToken(TokenType.SEMICOLON);
+        case "*":
+          return prepareToken(TokenType.STAR);
+        case "!":
+          return match("=")
+            ? prepareToken(TokenType.BANG_EQUAL)
+            : prepareToken(TokenType.BANG);
+        case "=":
+          return match("=")
+            ? prepareToken(TokenType.EQUAL_EQUAL)
+            : prepareToken(TokenType.EQUAL);
+        case "<":
+          return match("=")
+            ? prepareToken(TokenType.LESS_EQUAL)
+            : prepareToken(TokenType.LESS);
+        case ">":
+          return match("=")
+            ? prepareToken(TokenType.GREATER_EQUAL)
+            : prepareToken(TokenType.GREATER);
+        case "/":
+          if (match("/")) {
+            while (peek() !== "\n" && !isAtEnd()) advance();
+            break; // Comment discarded, scan again
+          } else {
+            return prepareToken(TokenType.SLASH);
+          }
+        // MULTICHARACTER TOKEN
+        case '"':
+          return scanString();
+        // WHITESPACE
+        case "\r":
+        case "\t":
+        case " ":
+          break;
+        case "\n":
+          line++;
+          break;
+        default:
+          if (isDigit(c)) {
+            return scanNumber(c);
+          }
+          if (isAlpha(c)) {
+            return scanIdentifier(c)
+          }
+
+          return {
+            kind: "error",
+            error: {
+              line,
+              message: `Unexpected character.`,
+              where: c,
+            },
+          } as ScanTokenError;
+      }
     }
-}
+  };
+
+  while (!isAtEnd()) {
+    const maybeToken = scanToken();
+    if (maybeToken.kind === "success") {
+      tokens.push(maybeToken.token);
+    } else {
+      errors.push(maybeToken.error);
+    }
+  }
+
+  tokens.push({ type: TokenType.EOF, lexeme: "", literal: null, line });
+
+  return {
+    tokens,
+    errors,
+  };
+};
