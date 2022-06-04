@@ -1,0 +1,16 @@
+{
+    "include": [
+        "src/**/*.ts"
+    ],
+    "exclude": [
+        "node_modules",
+    ],
+    "compilerOptions": {
+        "target": "esnext",
+        "baseUrl": "./",
+        "sourceMap": true,
+        "moduleResolution": "node",
+        "module": "commonjs",
+        "esModuleInterop": true
+    },
+}
