@@ -55,7 +55,8 @@ export const scan = (source: string): ScanResult => {
     current + 1 >= source.length ? "\0" : source[current + 1];
   const match = (expected: string) => {
     if (expected.length + current > source.length) return false;
-    const isMatch = source.substring(current, current + expected.length) === expected;
+    const isMatch =
+      source.substring(current, current + expected.length) === expected;
     return (isMatch && ((current += expected.length), true)) || false;
   };
 

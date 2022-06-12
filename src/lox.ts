@@ -1,6 +1,8 @@
 import { readFileSync } from "fs";
 import * as readline from "node:readline";
 import { scan } from "./scanner";
+import { Token } from "./types";
+import * as ast from "./ast"
 
 const run = (source: string): void => {
   console.log(scan(source));
@@ -31,6 +33,7 @@ const main = () => {
   } else {
     runPrompt();
   }
+  
 };
 
 main();
