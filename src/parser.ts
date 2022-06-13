@@ -18,7 +18,11 @@ export const parse = (tokens: Token[]): Expr | undefined => {
   };
 
   const expression = (): Expr => {
-    return equality();
+    let expr = equality();
+    while (match(TokenType.COMMA)) { // Comma operator
+      expr = { type: ExprType.BINARY, operator: previous(), left: expr, right: expression() };
+    }
+    return expr
   };
   const equality = (): Expr => {
     let expr = comparison();
