@@ -11,16 +11,15 @@ export const parse = (tokens: Token[]): Expr | undefined => {
   const peek = () => tokens[current];
   const advance = () => tokens[isAtEnd() ? current : current++];
   const match = (...types: TokenType[]) =>
-    types.find((type) => check(type)) ? (advance(), true) : false;
+    types.find((type) => check(type)) !== undefined ? (advance(), true) : false;
   const consume = (message: string, ...types: TokenType[]) => {
     if (match(...types)) return true;
     throw new ParseError(peek(), message);
-  }
-
+  };
 
   const expression = (): Expr => {
     return equality();
-  }
+  };
   const equality = (): Expr => {
     let expr = comparison();
     while (match(TokenType.BANG_EQUAL, TokenType.EQUAL_EQUAL)) {
@@ -29,25 +28,32 @@ export const parse = (tokens: Token[]): Expr | undefined => {
       expr = { type: ExprType.BINARY, operator, left: expr, right };
     }
     return expr;
-  }
+  };
   const comparison = (): Expr => {
     let expr = term();
-    while (match(TokenType.LESS, TokenType.LESS_EQUAL, TokenType.GREATER, TokenType.GREATER_EQUAL)) {
+    while (
+      match(
+        TokenType.LESS,
+        TokenType.LESS_EQUAL,
+        TokenType.GREATER,
+        TokenType.GREATER_EQUAL
+      )
+    ) {
       const operator = previous();
       const right = term();
       expr = { type: ExprType.BINARY, operator, left: expr, right };
     }
     return expr;
-  }
+  };
   const term = (): Expr => {
-    let expr = factor()
-    while (match(TokenType.STAR, TokenType.SLASH)) {
+    let expr = factor();
+    while (match(TokenType.MINUS, TokenType.PLUS)) {
       const operator = previous();
       const right = factor();
       expr = { type: ExprType.BINARY, operator, left: expr, right };
     }
     return expr;
-  }
+  };
   const factor = (): Expr => {
     let expr = unary();
     while (match(TokenType.STAR, TokenType.SLASH)) {
@@ -75,7 +81,7 @@ export const parse = (tokens: Token[]): Expr | undefined => {
     if (match(TokenType.LEFT_PAREN)) {
       const expr = expression();
       consume("Expected a right parenthesis.", TokenType.RIGHT_PAREN);
-      return expr;
+      return { type: ExprType.GROUPING, expression: expr };
     }
   };
 
@@ -84,8 +90,8 @@ export const parse = (tokens: Token[]): Expr | undefined => {
   } catch (e) {
     if (e instanceof ParseError) {
       console.error(e.message);
-      return undefined
+      return undefined;
     }
-    throw e
+    throw e;
   }
 };
