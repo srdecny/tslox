@@ -147,8 +147,6 @@ export const scan = (source: string): ScanResult => {
       }
     }
     const num = parseFloat(initialDigit);
-    console.log(num);
-
     return {
       kind: "success",
       token: {

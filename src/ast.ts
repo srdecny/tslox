@@ -1,41 +1,45 @@
 import { Token } from "./types"
 
-enum ExprKind {
+enum ExprType {
     BINARY,
     GROUPING,
     LITERAL,
     UNARY
 }
 
-interface Expr {
-    kind: ExprKind
+interface BaseExpr {
+    type: ExprType
 }
-interface BinaryExpr extends Expr {
-    left: Expr
-    right: Expr
+interface BinaryExpr extends BaseExpr {
+    left: BaseExpr
+    right: BaseExpr
     operator: Token
-    kind: ExprKind.BINARY
+    type: ExprType.BINARY
 }
 
-interface GroupingExpr extends Expr {
-    expression: Expr
-    kind: ExprKind.GROUPING
+interface GroupingExpr extends BaseExpr {
+    expression: BaseExpr
+    type: ExprType.GROUPING
 }
 
-interface LiteralExpr extends Expr {
+interface LiteralExpr extends BaseExpr {
     value: any
-    kind: ExprKind.LITERAL
+    type: ExprType.LITERAL
 }
 
-interface UnaryExpr extends Expr {
-    right: Expr
+interface UnaryExpr extends BaseExpr {
+    right: BaseExpr
     operator: Token
-    kind: ExprKind.UNARY
+    type: ExprType.UNARY
 }
+
+type Expr = BinaryExpr | GroupingExpr | LiteralExpr | UnaryExpr
 
 export {
     BinaryExpr,
     GroupingExpr,
     LiteralExpr,
     UnaryExpr,
+    Expr,
+    ExprType
 }

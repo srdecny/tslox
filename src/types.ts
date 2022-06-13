@@ -59,3 +59,13 @@ export interface Error {
   message: string;
   where?: string;
 }
+
+
+export class ParseError extends Error {
+  token: Token;
+  constructor(token: Token, message: string) {
+    super();
+    this.message = message;
+    this.token = token;
+  }
+}

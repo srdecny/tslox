@@ -2,10 +2,17 @@ import { readFileSync } from "fs";
 import * as readline from "node:readline";
 import { scan } from "./scanner";
 import { Token } from "./types";
-import * as ast from "./ast"
+import * as ast from "./ast";
+import { parse } from "./parser";
 
 const run = (source: string): void => {
-  console.log(scan(source));
+  const scanRes = scan(source);
+  if (scanRes.errors.length > 0) {
+    console.error(scanRes.errors);
+    return;
+  }
+  const ast = parse(scanRes.tokens);
+  console.log(ast);
 };
 
 const runFile = (file: string) => {
@@ -33,7 +40,6 @@ const main = () => {
   } else {
     runPrompt();
   }
-  
 };
 
 main();
