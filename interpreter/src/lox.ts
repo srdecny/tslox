@@ -4,6 +4,7 @@ import { scan } from "./scanner";
 import { Token } from "./types";
 import * as ast from "./ast";
 import { parse } from "./parser";
+import {interpret} from "./interpreter";
 
 const run = (source: string): void => {
   const scanRes = scan(source);
@@ -12,7 +13,12 @@ const run = (source: string): void => {
     return;
   }
   const ast = parse(scanRes.tokens);
-  console.log(ast);
+  try {
+    const obj = interpret(ast)
+    console.log(obj.value)
+  } catch (e) {
+    console.error(e);
+  }
 };
 
 const runFile = (file: string) => {

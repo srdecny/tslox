@@ -69,3 +69,10 @@ export class ParseError extends Error {
     this.token = token;
   }
 }
+
+export class LoxRuntimeError extends Error {
+  constructor(message: string) {
+    super();
+    this.message = message;
+  }
+}

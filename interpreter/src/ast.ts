@@ -11,14 +11,14 @@ interface BaseExpr {
     type: ExprType
 }
 interface BinaryExpr extends BaseExpr {
-    left: BaseExpr
-    right: BaseExpr
+    left: Expr
+    right: Expr
     operator: Token
     type: ExprType.BINARY
 }
 
 interface GroupingExpr extends BaseExpr {
-    expression: BaseExpr
+    expression: Expr
     type: ExprType.GROUPING
 }
 
@@ -28,7 +28,7 @@ interface LiteralExpr extends BaseExpr {
 }
 
 interface UnaryExpr extends BaseExpr {
-    right: BaseExpr
+    right: Expr
     operator: Token
     type: ExprType.UNARY
 }
