@@ -1,7 +1,7 @@
 import { Token, TokenType, ParseError } from "./types";
-import { Expr, ExprType, Statement, StatementType } from "./ast";
+import { Expr, ExprType, Statement, StatementType, Declaration, DeclarationType, } from "./ast";
 
-export const parse = (tokens: Token[]): Statement[] | undefined => {
+export const parse = (tokens: Token[]): Declaration[] | undefined => {
   let current = 0;
 
   const isAtEnd = () => current >= tokens.length;
@@ -17,14 +17,33 @@ export const parse = (tokens: Token[]): Statement[] | undefined => {
     throw new ParseError(peek(), message);
   };
 
-  const program = (): Statement[] => {
-    const statements: Statement[] = [];
+  const program = (): Declaration[] => {
+    const declarations: Declaration[] = [];
     while (peek().type !== TokenType.EOF) {
-      statements.push(statement());
+      declarations.push(declaration());
     }
     consume("Unexpected EOF while parsing", TokenType.EOF);
-    return statements;
+    return declarations;
   };
+
+  const declaration = (): Declaration => {
+    let declaration: Declaration;
+    if (match(TokenType.VAR)) {
+      consume("Expected variable name", TokenType.IDENTIFIER);
+      declaration = {
+        type: DeclarationType.VAR,
+        name: previous(),
+        intializer: match(TokenType.EQUAL) ? expression() : undefined
+      }
+    } else {
+      declaration = {
+        type: DeclarationType.STATEMENT,
+        statement: statement()
+      }
+    }
+    consume("Expected ';' after declaration", TokenType.SEMICOLON);
+    return declaration;
+  }
 
   const statement = (): Statement => {
     let statement: Statement;
@@ -33,14 +52,12 @@ export const parse = (tokens: Token[]): Statement[] | undefined => {
         type: StatementType.PRINT,
         expression: expression(),
       };
-      consume("; is expected after print", TokenType.SEMICOLON);
       return statement;
     } else {
       statement = {
         type: StatementType.EXPRESSION,
         expression: expression(),
       };
-      consume("; is expected after expression", TokenType.SEMICOLON);
       return statement;
     }
   };
@@ -120,6 +137,9 @@ export const parse = (tokens: Token[]): Statement[] | undefined => {
       const expr = expression();
       consume("Expected a right parenthesis.", TokenType.RIGHT_PAREN);
       return { type: ExprType.GROUPING, expression: expr };
+    }
+    if (match(TokenType.IDENTIFIER)) {
+      return { type: ExprType.VARIABLE, name: previous() };
     }
   };
 

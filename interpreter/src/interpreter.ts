@@ -1,23 +1,40 @@
 import { LoxNumber, LoxObject, LoxObjectType } from "./objects";
 import {
   BinaryExpr,
+  Declaration,
+  DeclarationType,
   Expr,
   ExprType,
   GroupingExpr,
   LiteralExpr,
   StatementType,
   UnaryExpr,
+  VariableExpr,
 } from "./ast";
 import { LoxRuntimeError, Token, TokenType } from "./types";
 import { Statement } from "./ast";
+import Environment from "./environment";
 
-export function execute(statements: Statement[]) {
-  statements.forEach(statement => {
-    const res = interpret(statement.expression);
-    if (statement.type === StatementType.PRINT) {
-      console.log(res.value);
+const env = new Environment();
+
+export function execute(declarations: Declaration[]) {
+  declarations.forEach(declaration => {
+    if (declaration.type === DeclarationType.VAR) {
+      env.define(declaration.name.lexeme, declaration.intializer ? interpret(declaration.intializer) : null);
+    }
+    if (declaration.type === DeclarationType.STATEMENT) {
+      evaluate(declaration.statement);
     }
   })
+}
+
+const evaluate = (statement: Statement) => {
+  switch (statement.type) {
+    case StatementType.EXPRESSION:
+      interpret(statement.expression);
+    case StatementType.PRINT:
+      console.log(interpret(statement.expression).value);
+  }
 }
 
 const interpret = (expression: Expr): LoxObject => {
@@ -30,7 +47,13 @@ const interpret = (expression: Expr): LoxObject => {
       return interpretLiteral(expression);
     case ExprType.UNARY:
       return interpretUnary(expression);
+    case ExprType.VARIABLE:
+      return interpretVariable(expression);
   }
+}
+
+const interpretVariable = (expression: VariableExpr): LoxObject => {
+  return env.get(expression.name.lexeme);
 }
 
 const interpretUnary = (expression: UnaryExpr): LoxObject => {
