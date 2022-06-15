@@ -1,7 +1,7 @@
 import { Token, TokenType, ParseError } from "./types";
-import { Expr, ExprType } from "./ast";
+import { Expr, ExprType, Statement, StatementType } from "./ast";
 
-export const parse = (tokens: Token[]): Expr | undefined => {
+export const parse = (tokens: Token[]): Statement[] | undefined => {
   let current = 0;
 
   const isAtEnd = () => current >= tokens.length;
@@ -17,12 +17,46 @@ export const parse = (tokens: Token[]): Expr | undefined => {
     throw new ParseError(peek(), message);
   };
 
+  const program = (): Statement[] => {
+    const statements: Statement[] = [];
+    while (peek().type !== TokenType.EOF) {
+      statements.push(statement());
+    }
+    consume("Unexpected EOF while parsing", TokenType.EOF);
+    return statements;
+  };
+
+  const statement = (): Statement => {
+    let statement: Statement;
+    if (match(TokenType.PRINT)) {
+      statement = {
+        type: StatementType.PRINT,
+        expression: expression(),
+      };
+      consume("; is expected after print", TokenType.SEMICOLON);
+      return statement;
+    } else {
+      statement = {
+        type: StatementType.EXPRESSION,
+        expression: expression(),
+      };
+      consume("; is expected after expression", TokenType.SEMICOLON);
+      return statement;
+    }
+  };
+
   const expression = (): Expr => {
     let expr = equality();
-    while (match(TokenType.COMMA)) { // Comma operator
-      expr = { type: ExprType.BINARY, operator: previous(), left: expr, right: expression() };
+    while (match(TokenType.COMMA)) {
+      // Comma operator
+      expr = {
+        type: ExprType.BINARY,
+        operator: previous(),
+        left: expr,
+        right: expression(),
+      };
     }
-    return expr
+    return expr;
   };
   const equality = (): Expr => {
     let expr = comparison();
@@ -89,13 +123,5 @@ export const parse = (tokens: Token[]): Expr | undefined => {
     }
   };
 
-  try {
-    return expression();
-  } catch (e) {
-    if (e instanceof ParseError) {
-      console.error(e.message);
-      return undefined;
-    }
-    throw e;
-  }
+  return program();
 };

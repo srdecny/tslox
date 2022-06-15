@@ -35,11 +35,32 @@ interface UnaryExpr extends BaseExpr {
 
 type Expr = BinaryExpr | GroupingExpr | LiteralExpr | UnaryExpr
 
+
+enum StatementType {
+    EXPRESSION = "EXPRESSION",
+    PRINT = "PRINT",
+}
+interface ExprStatement {
+    type: StatementType.EXPRESSION
+    expression: Expr
+}
+
+interface PrintStatement {
+    type: StatementType.PRINT
+    expression: Expr
+}
+
+type Statement = ExprStatement | PrintStatement
+
 export {
     BinaryExpr,
     GroupingExpr,
     LiteralExpr,
     UnaryExpr,
     Expr,
-    ExprType
+    ExprType,
+    Statement,
+    ExprStatement,
+    PrintStatement,
+    StatementType
 }

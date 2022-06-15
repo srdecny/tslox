@@ -4,3 +4,4 @@ TypeScript Implementation of a Lox language interpreter from the book at https:/
 ## Implemented extras
 - Multiline comments
 - Comma expressions
+- Divide by zero exception

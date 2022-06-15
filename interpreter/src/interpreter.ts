@@ -5,12 +5,22 @@ import {
   ExprType,
   GroupingExpr,
   LiteralExpr,
+  StatementType,
   UnaryExpr,
 } from "./ast";
 import { LoxRuntimeError, Token, TokenType } from "./types";
+import { Statement } from "./ast";
 
-export function interpret(expression: Expr): LoxObject {
+export function execute(statements: Statement[]) {
+  statements.forEach(statement => {
+    const res = interpret(statement.expression);
+    if (statement.type === StatementType.PRINT) {
+      console.log(res.value);
+    }
+  })
+}
 
+const interpret = (expression: Expr): LoxObject => {
   switch (expression.type) {
     case ExprType.BINARY:
       return interpretBinary(expression);
@@ -62,6 +72,11 @@ const interpretBinary = (expression: BinaryExpr): LoxObject => {
       return { type: LoxObjectType.NUMBER, value: left.value - right.value };
     case TokenType.SLASH:
       checkForNumber(expression.operator, left, right);
+      if (right.value === 0) {
+        throw new LoxRuntimeError(
+          "Division by zero."
+        );
+      }
       return { type: LoxObjectType.NUMBER, value: left.value / right.value };
     case TokenType.STAR:
       checkForNumber(expression.operator, left, right);
