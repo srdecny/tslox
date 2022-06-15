@@ -136,6 +136,8 @@ const interpretBinary = (expression: BinaryExpr): LoxObject => {
       return { type: LoxObjectType.BOOLEAN, value: !isEqual(left, right) };
     case TokenType.EQUAL_EQUAL:
       return { type: LoxObjectType.BOOLEAN, value: isEqual(left, right) };
+    case TokenType.COMMA:
+      return right;
   }
 };
 
