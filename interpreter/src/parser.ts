@@ -42,6 +42,7 @@ export const parse = (tokens: Token[]): Declaration[] | undefined => {
         name: previous(),
         intializer: match(TokenType.EQUAL) ? expression() : undefined,
       };
+      consume("Expected ';' after declaration", TokenType.SEMICOLON);
     } else {
       declaration = {
         type: DeclarationType.STATEMENT,
@@ -58,6 +59,7 @@ export const parse = (tokens: Token[]): Declaration[] | undefined => {
         type: StatementType.PRINT,
         expression: expression(),
       };
+      consume("Expected ';' after statement", TokenType.SEMICOLON);
       return statement;
     } else if (match(TokenType.LEFT_BRACE)) {
       return {
@@ -69,6 +71,7 @@ export const parse = (tokens: Token[]): Declaration[] | undefined => {
         type: StatementType.EXPRESSION,
         expression: expression(),
       };
+      consume("Expected ';' after statement", TokenType.SEMICOLON);
       return statement;
     }
   };
@@ -93,7 +96,6 @@ export const parse = (tokens: Token[]): Declaration[] | undefined => {
         right: assignment(),
       };
     }
-    consume("Expected ';' after declaration", TokenType.SEMICOLON);
     return expr;
   };
 

@@ -23,7 +23,7 @@ export const execute = (declarations: Declaration[]) => {
     if (declaration.type === DeclarationType.VAR) {
       env.assign(
         declaration.name,
-        declaration.intializer ? interpret(declaration.intializer) : null
+        declaration.intializer ? interpret(declaration.intializer) : undefined
       );
     }
     if (declaration.type === DeclarationType.STATEMENT) {
