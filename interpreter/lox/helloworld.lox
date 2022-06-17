@@ -1,2 +1,3 @@
 var hello = "hello, world!";
-print hello,"hi";
+hello = "hi";
+print hello;

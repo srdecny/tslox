@@ -1,5 +1,5 @@
 import { LoxObject } from "./objects";
-import { LoxRuntimeError } from "./types";
+import { LoxRuntimeError, Token } from "./types";
 
 export default class Environment {
     values: { [key: string]: LoxObject } = {};
@@ -19,6 +19,15 @@ export default class Environment {
     define(name: string, value: LoxObject): void {
         this.values[name] = value;
     }
-    
+
+    assign(name: Token, value: LoxObject): void {
+        if (this.values[name.lexeme]) {
+            this.values[name.lexeme] = value;
+            return
+        } 
+        throw new LoxRuntimeError(`Undefined variable ${name.lexeme}`);
+    }
+
+
 
 }

@@ -1,5 +1,12 @@
 import { Token, TokenType, ParseError } from "./types";
-import { Expr, ExprType, Statement, StatementType, Declaration, DeclarationType, } from "./ast";
+import {
+  Expr,
+  ExprType,
+  Statement,
+  StatementType,
+  Declaration,
+  DeclarationType,
+} from "./ast";
 
 export const parse = (tokens: Token[]): Declaration[] | undefined => {
   let current = 0;
@@ -33,17 +40,17 @@ export const parse = (tokens: Token[]): Declaration[] | undefined => {
       declaration = {
         type: DeclarationType.VAR,
         name: previous(),
-        intializer: match(TokenType.EQUAL) ? expression() : undefined
-      }
+        intializer: match(TokenType.EQUAL) ? expression() : undefined,
+      };
     } else {
       declaration = {
         type: DeclarationType.STATEMENT,
-        statement: statement()
-      }
+        statement: statement(),
+      };
     }
     consume("Expected ';' after declaration", TokenType.SEMICOLON);
     return declaration;
-  }
+  };
 
   const statement = (): Statement => {
     let statement: Statement;
@@ -63,15 +70,32 @@ export const parse = (tokens: Token[]): Declaration[] | undefined => {
   };
 
   const expression = (): Expr => {
-    let expr = equality();
+    let expr = assignment();
     while (match(TokenType.COMMA)) {
       // Comma operator
       expr = {
         type: ExprType.BINARY,
         operator: previous(),
         left: expr,
-        right: expression(),
+        right: assignment(),
       };
+    }
+    return expr;
+  };
+
+  const assignment = (): Expr => {
+    const expr = equality();
+    if (match(TokenType.EQUAL)) {
+      const equals = previous();
+      const value = assignment();
+      if (expr.type === ExprType.VARIABLE) {
+        return {
+          type: ExprType.ASSIGNMENT,
+          name: expr.name,
+          value: value,
+        };
+      }
+      throw new ParseError(equals, "Invalid assignment target");
     }
     return expr;
   };

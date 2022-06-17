@@ -10,6 +10,7 @@ import {
   StatementType,
   UnaryExpr,
   VariableExpr,
+  AssignmentExpr
 } from "./ast";
 import { LoxRuntimeError, Token, TokenType } from "./types";
 import { Statement } from "./ast";
@@ -32,8 +33,10 @@ const evaluate = (statement: Statement) => {
   switch (statement.type) {
     case StatementType.EXPRESSION:
       interpret(statement.expression);
+      break;
     case StatementType.PRINT:
       console.log(interpret(statement.expression).value);
+      break;
   }
 }
 
@@ -49,7 +52,15 @@ const interpret = (expression: Expr): LoxObject => {
       return interpretUnary(expression);
     case ExprType.VARIABLE:
       return interpretVariable(expression);
+    case ExprType.ASSIGNMENT:
+      return interpretAssignment(expression);
   }
+}
+
+const interpretAssignment = (expression: AssignmentExpr): LoxObject => {
+  const value = interpret(expression.value);
+  env.assign(expression.name, value);
+  return value;
 }
 
 const interpretVariable = (expression: VariableExpr): LoxObject => {

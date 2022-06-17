@@ -5,7 +5,8 @@ enum ExprType {
     GROUPING,
     LITERAL,
     UNARY,
-    VARIABLE
+    VARIABLE,
+    ASSIGNMENT
 }
 
 interface BaseExpr {
@@ -39,7 +40,13 @@ interface VariableExpr extends BaseExpr {
     type: ExprType.VARIABLE
 }
 
-type Expr = BinaryExpr | GroupingExpr | LiteralExpr | UnaryExpr | VariableExpr
+interface AssignmentExpr extends BaseExpr {
+    name: Token
+    value: Expr
+    type: ExprType.ASSIGNMENT
+}
+
+type Expr = BinaryExpr | GroupingExpr | LiteralExpr | UnaryExpr | VariableExpr | AssignmentExpr
 
 
 enum StatementType {
@@ -81,6 +88,7 @@ export {
     LiteralExpr,
     UnaryExpr,
     VariableExpr,
+    AssignmentExpr,
     Expr,
     ExprType,
     Statement,
