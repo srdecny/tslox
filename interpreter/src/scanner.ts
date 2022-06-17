@@ -173,6 +173,13 @@ export const scan = (source: string): ScanResult => {
     };
     while (true) {
       c = advance();
+      // iterated past the end of the input string
+      if (c === undefined) {
+        return {
+          kind: "success",
+          token: { type: TokenType.EOF, lexeme: "", literal: null, line },
+        };
+      }
       switch (c) {
         case "(":
           return prepareToken(TokenType.LEFT_PAREN);
@@ -259,8 +266,6 @@ export const scan = (source: string): ScanResult => {
       errors.push(maybeToken.error);
     }
   }
-
-  tokens.push({ type: TokenType.EOF, lexeme: "", literal: null, line });
 
   return {
     tokens,
