@@ -66,6 +66,8 @@ export const parse = (tokens: Token[]): Declaration[] | undefined => {
         type: StatementType.BLOCK,
         declarations: block(),
       };
+    } else if (match(TokenType.IF)) {
+      return ifStatement();
     } else {
       statement = {
         type: StatementType.EXPRESSION,
@@ -85,6 +87,21 @@ export const parse = (tokens: Token[]): Declaration[] | undefined => {
     return declarations;
   };
 
+  const ifStatement = (): Statement => {
+    consume("Expected '(' after 'if'", TokenType.LEFT_PAREN);
+    const condition = expression();
+    consume("Expected ')' after condition", TokenType.RIGHT_PAREN);
+    const then = statement();
+    let elseStatement = undefined;
+    if (match(TokenType.ELSE)) elseStatement = statement();
+    return {
+      type: StatementType.IF,
+      condition,
+      then,
+      else: elseStatement,
+    };
+  };
+
   const expression = (): Expr => {
     let expr = assignment();
     while (match(TokenType.COMMA)) {
@@ -100,7 +117,7 @@ export const parse = (tokens: Token[]): Declaration[] | undefined => {
   };
 
   const assignment = (): Expr => {
-    const expr = equality();
+    const expr = or();
     if (match(TokenType.EQUAL)) {
       const equals = previous();
       const value = assignment();
@@ -115,6 +132,37 @@ export const parse = (tokens: Token[]): Declaration[] | undefined => {
     }
     return expr;
   };
+
+  const or = (): Expr => {
+    let expr = and();
+    while (match(TokenType.OR)) {
+      const operator = previous();
+      const right = and();
+      expr = {
+        type: ExprType.LOGICAL,
+        operator,
+        left: expr,
+        right,
+      };
+    }
+    return expr;
+  };
+
+  const and = (): Expr => {
+    let expr = equality();
+    while (match(TokenType.AND)) {
+      const operator = previous();
+      const right = equality();
+      expr = {
+        type: ExprType.LOGICAL,
+        operator,
+        left: expr,
+        right,
+      };
+    }
+    return expr;
+  };
+
   const equality = (): Expr => {
     let expr = comparison();
     while (match(TokenType.BANG_EQUAL, TokenType.EQUAL_EQUAL)) {
@@ -169,7 +217,7 @@ export const parse = (tokens: Token[]): Declaration[] | undefined => {
   const primary = (): Expr => {
     if (match(TokenType.FALSE)) return { type: ExprType.LITERAL, value: false };
     if (match(TokenType.TRUE)) return { type: ExprType.LITERAL, value: true };
-    if (match(TokenType.NIL)) return { type: ExprType.LITERAL, value: null };
+    if (match(TokenType.NIL)) return { type: ExprType.LITERAL, value: undefined };
     if (match(TokenType.NUMBER, TokenType.STRING)) {
       return { type: ExprType.LITERAL, value: previous().literal };
     }

@@ -38,7 +38,6 @@ const keywords: { [key: string]: TokenType } = {
 
 export const scan = (source: string): ScanResult => {
   let current = 0;
-  let start = 0;
   let line = 1;
 
   let tokens: Token[] = [];
@@ -258,13 +257,14 @@ export const scan = (source: string): ScanResult => {
     }
   };
 
-  while (!isAtEnd()) {
+  while (true) {
     const maybeToken = scanToken();
     if (maybeToken.kind === "success") {
       tokens.push(maybeToken.token);
     } else {
       errors.push(maybeToken.error);
     }
+    if (maybeToken.kind === "success" && maybeToken.token.type === TokenType.EOF) break;
   }
 
   return {

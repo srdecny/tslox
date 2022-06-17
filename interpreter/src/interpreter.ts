@@ -11,6 +11,7 @@ import {
   UnaryExpr,
   VariableExpr,
   AssignmentExpr,
+  LogicalExpr
 } from "./ast";
 import { LoxRuntimeError, Token, TokenType } from "./types";
 import { Statement } from "./ast";
@@ -43,6 +44,13 @@ const evaluate = (statement: Statement) => {
     case StatementType.BLOCK:
       executeBlock(statement.declarations, env);
       break;
+    case StatementType.IF:
+      if (isTruthy(interpret(statement.condition))) {
+        evaluate(statement.then);
+      } else if (statement.else) {
+        evaluate(statement.else);
+      }
+      break;
   }
 };
 
@@ -69,6 +77,8 @@ const interpret = (expression: Expr): LoxObject => {
       return interpretVariable(expression);
     case ExprType.ASSIGNMENT:
       return interpretAssignment(expression);
+    case ExprType.LOGICAL:
+      return interpretLogical(expression);
   }
 };
 
@@ -81,6 +91,18 @@ const interpretAssignment = (expression: AssignmentExpr): LoxObject => {
 const interpretVariable = (expression: VariableExpr): LoxObject => {
   return env.get(expression.name.lexeme);
 };
+
+const interpretLogical = (expression: LogicalExpr): LoxObject => {
+  const left = interpret(expression.left);
+  if (expression.operator.type === TokenType.OR) {
+    if (isTruthy(left)) return left;
+    return interpret(expression.right);
+  }
+  if (expression.operator.type === TokenType.AND) {
+    if (!isTruthy(left)) return left;
+    return interpret(expression.right);
+  }
+}
 
 const interpretUnary = (expression: UnaryExpr): LoxObject => {
   const right = interpret(expression.right);

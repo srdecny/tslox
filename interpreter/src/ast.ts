@@ -6,7 +6,8 @@ enum ExprType {
     LITERAL,
     UNARY,
     VARIABLE,
-    ASSIGNMENT
+    ASSIGNMENT,
+    LOGICAL,
 }
 
 interface BaseExpr {
@@ -46,13 +47,22 @@ interface AssignmentExpr extends BaseExpr {
     type: ExprType.ASSIGNMENT
 }
 
-type Expr = BinaryExpr | GroupingExpr | LiteralExpr | UnaryExpr | VariableExpr | AssignmentExpr
+interface LogicalExpr extends BaseExpr {
+    left: Expr
+    right: Expr
+    operator: Token
+    type: ExprType.LOGICAL
+}
+
+type Expr = BinaryExpr | GroupingExpr | LiteralExpr | UnaryExpr | VariableExpr | AssignmentExpr | LogicalExpr
 
 
 enum StatementType {
     EXPRESSION = "EXPRESSION",
     PRINT = "PRINT",
-    BLOCK = "BLOCK"
+    BLOCK = "BLOCK",
+    IF = "IF",
+    WHILE = "WHILE",
 }
 interface ExprStatement {
     type: StatementType.EXPRESSION
@@ -67,6 +77,13 @@ interface PrintStatement {
 interface BlockStatement {
     type: StatementType.BLOCK
     declarations: Declaration[]
+}
+
+interface IfStatement {
+    type: StatementType.IF
+    condition: Expr,
+    then: Statement,
+    else?: Statement
 }
 
 enum DeclarationType {
@@ -85,7 +102,7 @@ interface StatementDeclaration {
     statement: Statement
 }
 
-type Statement = ExprStatement | PrintStatement | BlockStatement
+type Statement = ExprStatement | PrintStatement | BlockStatement | IfStatement
 type Declaration = VariableDeclaration | StatementDeclaration
 
 export {
@@ -95,12 +112,14 @@ export {
     UnaryExpr,
     VariableExpr,
     AssignmentExpr,
+    LogicalExpr,
     Expr,
     ExprType,
     Statement,
     ExprStatement,
     PrintStatement,
     BlockStatement,
+    IfStatement,
     StatementType,
     Declaration,
     DeclarationType,
