@@ -6,6 +6,8 @@ import {
   StatementType,
   Declaration,
   DeclarationType,
+  ExprStatement,
+  BlockStatement,
 } from "./ast";
 
 export const parse = (tokens: Token[]): Declaration[] | undefined => {
@@ -68,6 +70,10 @@ export const parse = (tokens: Token[]): Declaration[] | undefined => {
       };
     } else if (match(TokenType.IF)) {
       return ifStatement();
+    } else if (match(TokenType.WHILE)) {
+      return whileStatement();
+    } else if (match(TokenType.FOR)) {
+      return forStatement();
     } else {
       statement = {
         type: StatementType.EXPRESSION,
@@ -85,6 +91,97 @@ export const parse = (tokens: Token[]): Declaration[] | undefined => {
     }
     consume("Expected '}' after block", TokenType.RIGHT_BRACE);
     return declarations;
+  };
+
+  const whileStatement = (): Statement => {
+    consume("Expected '(' after 'while'", TokenType.LEFT_PAREN);
+    const condition = expression();
+    consume("Expected ')' after condition", TokenType.RIGHT_PAREN);
+    const body = statement();
+    return {
+      type: StatementType.WHILE,
+      condition,
+      body,
+    };
+  };
+
+  const forStatement = (): Statement => {
+    consume("Expected '(' after 'for'", TokenType.LEFT_PAREN);
+    let initializer: Declaration;
+    if (match(TokenType.SEMICOLON)) {
+      initializer = undefined;
+    } else if (check(TokenType.VAR)) {
+      initializer = declaration();
+      if (initializer.type !== DeclarationType.VAR) {
+        throw new ParseError(peek(), "Expected variable declaration");
+      }
+    } else {
+      const initializerStmt = statement();
+      if (initializerStmt.type !== StatementType.EXPRESSION) {
+        throw new ParseError(peek(), "Expected expression");
+      }
+      initializer = {
+        type: DeclarationType.STATEMENT,
+        statement: initializerStmt,
+      };
+    }
+
+    let condition: Expr;
+    if (check(TokenType.SEMICOLON)) {
+      condition = undefined;
+    } else {
+      condition = assignment();
+    }
+    consume("Expected ';' after condition", TokenType.SEMICOLON);
+
+    let increment = undefined;
+    if (!check(TokenType.RIGHT_PAREN)) {
+      increment = expression();
+    }
+    consume("Expected ')' after increment", TokenType.RIGHT_PAREN);
+
+    const stmnt2dec = (statement: Statement): Declaration => {
+      return {
+        type: DeclarationType.STATEMENT,
+        statement,
+      };
+    };
+    const expr2stmnt = (expression: Expr): Statement => {
+      return {
+        type: StatementType.EXPRESSION,
+        expression,
+      };
+    };
+
+    let body = statement();
+    const bodyLoop = increment
+      ? [stmnt2dec(body), stmnt2dec(expr2stmnt(increment))]
+      : [stmnt2dec(body)];
+    body = {
+      type: StatementType.BLOCK,
+      declarations: bodyLoop,
+    };
+
+    if (!condition) {
+      condition = {
+        type: ExprType.LITERAL,
+        value: true,
+      } as Expr;
+    }
+
+    body = {
+      type: StatementType.WHILE,
+      condition,
+      body,
+    }
+    if (initializer) {
+      body = {
+        type: StatementType.BLOCK,
+        declarations: [initializer, stmnt2dec(body)],
+      }
+    }
+
+    return body;
   };
 
   const ifStatement = (): Statement => {
@@ -217,7 +314,8 @@ export const parse = (tokens: Token[]): Declaration[] | undefined => {
   const primary = (): Expr => {
     if (match(TokenType.FALSE)) return { type: ExprType.LITERAL, value: false };
     if (match(TokenType.TRUE)) return { type: ExprType.LITERAL, value: true };
-    if (match(TokenType.NIL)) return { type: ExprType.LITERAL, value: undefined };
+    if (match(TokenType.NIL))
+      return { type: ExprType.LITERAL, value: undefined };
     if (match(TokenType.NUMBER, TokenType.STRING)) {
       return { type: ExprType.LITERAL, value: previous().literal };
     }

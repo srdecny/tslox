@@ -63,6 +63,7 @@ enum StatementType {
     BLOCK = "BLOCK",
     IF = "IF",
     WHILE = "WHILE",
+    FOR = "FOR",
 }
 interface ExprStatement {
     type: StatementType.EXPRESSION
@@ -86,6 +87,20 @@ interface IfStatement {
     else?: Statement
 }
 
+interface WhileStatement {
+    type: StatementType.WHILE
+    condition: Expr,
+    body: Statement
+}
+
+interface ForStatement {
+    type: StatementType.FOR,
+    initializer: Expr,
+    condition: Expr,
+    increment: Expr,
+    body: Statement
+}
+
 enum DeclarationType {
     VAR = "VAR",
     STATEMENT = "STATEMENT",
@@ -102,7 +117,7 @@ interface StatementDeclaration {
     statement: Statement
 }
 
-type Statement = ExprStatement | PrintStatement | BlockStatement | IfStatement
+type Statement = ExprStatement | PrintStatement | BlockStatement | IfStatement | WhileStatement | ForStatement
 type Declaration = VariableDeclaration | StatementDeclaration
 
 export {
@@ -120,6 +135,8 @@ export {
     PrintStatement,
     BlockStatement,
     IfStatement,
+    WhileStatement,
+    ForStatement,
     StatementType,
     Declaration,
     DeclarationType,

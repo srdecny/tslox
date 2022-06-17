@@ -23,6 +23,13 @@ export default class Environment {
   }
 
   assign(name: Token, value: LoxObject | undefined): void {
-    this.scopes[0][name.lexeme] = value;
+    const scope = this.scopes.find((scope) =>
+      scope.hasOwnProperty(name.lexeme)
+    );
+    if (scope) {
+      scope[name.lexeme] = value;
+    } else {
+      this.scopes[0][name.lexeme] = value;
+    }
   }
 }
