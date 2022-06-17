@@ -12,6 +12,7 @@
         "moduleResolution": "node",
         "module": "commonjs",
         "esModuleInterop": true,
-        "noImplicitAny": true
+        "noImplicitAny": true,
+        
     },
 }

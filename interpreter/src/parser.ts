@@ -29,7 +29,7 @@ export const parse = (tokens: Token[]): Declaration[] | undefined => {
     while (peek().type !== TokenType.EOF) {
       declarations.push(declaration());
     }
-    consume("Unexpected EOF while parsing", TokenType.EOF);
+    consume("Expected EOF while parsing", TokenType.EOF);
     return declarations;
   };
 
@@ -48,7 +48,6 @@ export const parse = (tokens: Token[]): Declaration[] | undefined => {
         statement: statement(),
       };
     }
-    consume("Expected ';' after declaration", TokenType.SEMICOLON);
     return declaration;
   };
 
@@ -60,6 +59,11 @@ export const parse = (tokens: Token[]): Declaration[] | undefined => {
         expression: expression(),
       };
       return statement;
+    } else if (match(TokenType.LEFT_BRACE)) {
+      return {
+        type: StatementType.BLOCK,
+        declarations: block(),
+      };
     } else {
       statement = {
         type: StatementType.EXPRESSION,
@@ -67,6 +71,15 @@ export const parse = (tokens: Token[]): Declaration[] | undefined => {
       };
       return statement;
     }
+  };
+
+  const block = (): Declaration[] => {
+    const declarations: Declaration[] = [];
+    while (!check(TokenType.RIGHT_BRACE) && !isAtEnd()) {
+      declarations.push(declaration());
+    }
+    consume("Expected '}' after block", TokenType.RIGHT_BRACE);
+    return declarations;
   };
 
   const expression = (): Expr => {
@@ -80,6 +93,7 @@ export const parse = (tokens: Token[]): Declaration[] | undefined => {
         right: assignment(),
       };
     }
+    consume("Expected ';' after declaration", TokenType.SEMICOLON);
     return expr;
   };
 

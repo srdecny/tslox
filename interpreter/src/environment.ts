@@ -2,32 +2,23 @@ import { LoxObject } from "./objects";
 import { LoxRuntimeError, Token } from "./types";
 
 export default class Environment {
-    values: { [key: string]: LoxObject } = {};
+  scopes: { [key: string]: LoxObject }[] = [{}];
 
-    get(name: string): LoxObject {
-        if (this.values[name]) {
-            return this.values[name];
-        } else {
-            throw new LoxRuntimeError(`Undefined variable ${name}`);
-        }
-    }
+  nest() {
+    this.scopes = [{}, ...this.scopes];
+  }
 
-    set(name: string, value: LoxObject): void {
-        this.values[name] = value;
-    }
+  pop() {
+    this.scopes = this.scopes.slice(1);
+  }
 
-    define(name: string, value: LoxObject): void {
-        this.values[name] = value;
-    }
+  get(name: string): LoxObject {
+    const scope = this.scopes.find((scope) => scope[name]);
+    if (scope) return scope[name];
+    throw new LoxRuntimeError(`Undefined variable ${name}`);
+  }
 
-    assign(name: Token, value: LoxObject): void {
-        if (this.values[name.lexeme]) {
-            this.values[name.lexeme] = value;
-            return
-        } 
-        throw new LoxRuntimeError(`Undefined variable ${name.lexeme}`);
-    }
-
-
-
+  assign(name: Token, value: LoxObject): void {
+    this.scopes[0][name.lexeme] = value;
+  }
 }

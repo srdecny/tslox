@@ -10,23 +10,26 @@ import {
   StatementType,
   UnaryExpr,
   VariableExpr,
-  AssignmentExpr
+  AssignmentExpr,
 } from "./ast";
 import { LoxRuntimeError, Token, TokenType } from "./types";
 import { Statement } from "./ast";
 import Environment from "./environment";
 
-const env = new Environment();
+let env = new Environment();
 
-export function execute(declarations: Declaration[]) {
-  declarations.forEach(declaration => {
+export const execute = (declarations: Declaration[]) => {
+  declarations.forEach((declaration) => {
     if (declaration.type === DeclarationType.VAR) {
-      env.define(declaration.name.lexeme, declaration.intializer ? interpret(declaration.intializer) : null);
+      env.assign(
+        declaration.name,
+        declaration.intializer ? interpret(declaration.intializer) : null
+      );
     }
     if (declaration.type === DeclarationType.STATEMENT) {
       evaluate(declaration.statement);
     }
-  })
+  });
 }
 
 const evaluate = (statement: Statement) => {
@@ -37,8 +40,20 @@ const evaluate = (statement: Statement) => {
     case StatementType.PRINT:
       console.log(interpret(statement.expression).value);
       break;
+    case StatementType.BLOCK:
+      executeBlock(statement.declarations, env);
+      break;
   }
-}
+};
+
+const executeBlock = (declarations: Declaration[], env: Environment) => {
+  try {
+    env.nest()
+      execute(declarations);
+  } finally {
+    env.pop();
+  }
+};
 
 const interpret = (expression: Expr): LoxObject => {
   switch (expression.type) {
@@ -55,17 +70,17 @@ const interpret = (expression: Expr): LoxObject => {
     case ExprType.ASSIGNMENT:
       return interpretAssignment(expression);
   }
-}
+};
 
 const interpretAssignment = (expression: AssignmentExpr): LoxObject => {
   const value = interpret(expression.value);
   env.assign(expression.name, value);
   return value;
-}
+};
 
 const interpretVariable = (expression: VariableExpr): LoxObject => {
   return env.get(expression.name.lexeme);
-}
+};
 
 const interpretUnary = (expression: UnaryExpr): LoxObject => {
   const right = interpret(expression.right);
@@ -79,18 +94,18 @@ const interpretUnary = (expression: UnaryExpr): LoxObject => {
 };
 
 const interpretLiteral = (expression: LiteralExpr): LoxObject => {
-    // The typeof call could be avoided by passing another field in the LiteralExpr
-    // ...it probably doesn't matter though
-    switch (typeof expression.value) {
-        case "string":
-            return { type: LoxObjectType.STRING, value: expression.value };
-        case "number":
-            return { type: LoxObjectType.NUMBER, value: expression.value };
-        case "boolean":
-            return { type: LoxObjectType.BOOLEAN, value: expression.value };
-        case "undefined":
-            return { type: LoxObjectType.NIL, value: expression.value };
-    }
+  // The typeof call could be avoided by passing another field in the LiteralExpr
+  // ...it probably doesn't matter though
+  switch (typeof expression.value) {
+    case "string":
+      return { type: LoxObjectType.STRING, value: expression.value };
+    case "number":
+      return { type: LoxObjectType.NUMBER, value: expression.value };
+    case "boolean":
+      return { type: LoxObjectType.BOOLEAN, value: expression.value };
+    case "undefined":
+      return { type: LoxObjectType.NIL, value: expression.value };
+  }
 };
 
 const interpretGrouping = (expression: GroupingExpr): LoxObject => {
@@ -107,9 +122,7 @@ const interpretBinary = (expression: BinaryExpr): LoxObject => {
     case TokenType.SLASH:
       checkForNumber(expression.operator, left, right);
       if (right.value === 0) {
-        throw new LoxRuntimeError(
-          "Division by zero."
-        );
+        throw new LoxRuntimeError("Division by zero.");
       }
       return { type: LoxObjectType.NUMBER, value: left.value / right.value };
     case TokenType.STAR:

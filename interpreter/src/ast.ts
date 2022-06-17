@@ -52,6 +52,7 @@ type Expr = BinaryExpr | GroupingExpr | LiteralExpr | UnaryExpr | VariableExpr |
 enum StatementType {
     EXPRESSION = "EXPRESSION",
     PRINT = "PRINT",
+    BLOCK = "BLOCK"
 }
 interface ExprStatement {
     type: StatementType.EXPRESSION
@@ -61,6 +62,11 @@ interface ExprStatement {
 interface PrintStatement {
     type: StatementType.PRINT
     expression: Expr
+}
+
+interface BlockStatement {
+    type: StatementType.BLOCK
+    declarations: Declaration[]
 }
 
 enum DeclarationType {
@@ -79,7 +85,7 @@ interface StatementDeclaration {
     statement: Statement
 }
 
-type Statement = ExprStatement | PrintStatement
+type Statement = ExprStatement | PrintStatement | BlockStatement
 type Declaration = VariableDeclaration | StatementDeclaration
 
 export {
@@ -94,6 +100,7 @@ export {
     Statement,
     ExprStatement,
     PrintStatement,
+    BlockStatement,
     StatementType,
     Declaration,
     DeclarationType,
