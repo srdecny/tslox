@@ -6,8 +6,6 @@ import {
   StatementType,
   Declaration,
   DeclarationType,
-  ExprStatement,
-  BlockStatement,
 } from "./ast";
 
 export const parse = (tokens: Token[]): Declaration[] | undefined => {
@@ -63,6 +61,8 @@ export const parse = (tokens: Token[]): Declaration[] | undefined => {
       };
       consume("Expected ';' after statement", TokenType.SEMICOLON);
       return statement;
+    } else if (match(TokenType.FUN)) {
+      return functionStatement();
     } else if (match(TokenType.LEFT_BRACE)) {
       return {
         type: StatementType.BLOCK,
@@ -92,6 +92,34 @@ export const parse = (tokens: Token[]): Declaration[] | undefined => {
     consume("Expected '}' after block", TokenType.RIGHT_BRACE);
     return declarations;
   };
+
+  const functionStatement = (): Statement => {
+    consume("Expected function name", TokenType.IDENTIFIER);
+    const name = previous();
+    consume("Expected '(' after function name", TokenType.LEFT_PAREN);
+    const parameters = parameterList();
+    consume("Expected ')' after parameters", TokenType.RIGHT_PAREN);
+    consume("Expected '{' after function", TokenType.LEFT_BRACE);
+    const body = block();
+    return {
+      type: StatementType.FUNCTION,
+      name,
+      parameters,
+      arity: parameters.length,
+      body,
+    };
+  }
+
+  const parameterList = (): Token[] => {
+    const parameters: Token[] = [];
+    if (!check(TokenType.RIGHT_PAREN)) {
+      do {
+        consume("Expected parameter name", TokenType.IDENTIFIER);
+        parameters.push(previous());
+      } while (match(TokenType.COMMA));
+    }
+    return parameters;
+  }
 
   const whileStatement = (): Statement => {
     consume("Expected '(' after 'while'", TokenType.LEFT_PAREN);
@@ -201,15 +229,6 @@ export const parse = (tokens: Token[]): Declaration[] | undefined => {
 
   const expression = (): Expr => {
     let expr = assignment();
-    while (match(TokenType.COMMA)) {
-      // Comma operator
-      expr = {
-        type: ExprType.BINARY,
-        operator: previous(),
-        left: expr,
-        right: assignment(),
-      };
-    }
     return expr;
   };
 
@@ -309,8 +328,38 @@ export const parse = (tokens: Token[]): Declaration[] | undefined => {
       const right = unary();
       return { type: ExprType.UNARY, operator, right };
     }
-    return primary();
+    return call();
   };
+
+  const call = (): Expr => {
+    let expr = primary();
+    while (true) {
+      if (match(TokenType.LEFT_PAREN)) {
+        const paren = previous();
+        const arg = args();
+        expr = {
+          type: ExprType.CALL,
+          callee: expr,
+          arguments: arg,
+          paren
+        };
+      } else {
+        break;
+      }
+    }
+    return expr
+  }
+
+  const args = (): Expr[] => {
+    let args = [];
+    if (!check(TokenType.RIGHT_PAREN)) {
+      do {
+        args.push(expression());
+      } while (match(TokenType.COMMA));
+      consume("Expected ')' after arguments", TokenType.RIGHT_PAREN);
+    }
+    return args
+  }
   const primary = (): Expr => {
     if (match(TokenType.FALSE)) return { type: ExprType.LITERAL, value: false };
     if (match(TokenType.TRUE)) return { type: ExprType.LITERAL, value: true };

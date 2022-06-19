@@ -8,6 +8,7 @@ enum ExprType {
     VARIABLE,
     ASSIGNMENT,
     LOGICAL,
+    CALL
 }
 
 interface BaseExpr {
@@ -54,7 +55,13 @@ interface LogicalExpr extends BaseExpr {
     type: ExprType.LOGICAL
 }
 
-type Expr = BinaryExpr | GroupingExpr | LiteralExpr | UnaryExpr | VariableExpr | AssignmentExpr | LogicalExpr
+interface CallExpr extends BaseExpr {
+    callee: Expr
+    arguments: Expr[]
+    paren: Token
+    type: ExprType.CALL
+}
+type Expr = BinaryExpr | GroupingExpr | LiteralExpr | UnaryExpr | VariableExpr | AssignmentExpr | LogicalExpr | CallExpr
 
 
 enum StatementType {
@@ -64,6 +71,7 @@ enum StatementType {
     IF = "IF",
     WHILE = "WHILE",
     FOR = "FOR",
+    FUNCTION = "FUNCTION",
 }
 interface ExprStatement {
     type: StatementType.EXPRESSION
@@ -101,9 +109,18 @@ interface ForStatement {
     body: Statement
 }
 
+interface FunctionStatement {
+    type: StatementType.FUNCTION
+    name: Token
+    parameters: Token[]
+    arity: number
+    body: Declaration[]
+}
+
 enum DeclarationType {
     VAR = "VAR",
     STATEMENT = "STATEMENT",
+    FUNCTION = "FUNCTION"
 }
 
 interface VariableDeclaration {
@@ -117,7 +134,7 @@ interface StatementDeclaration {
     statement: Statement
 }
 
-type Statement = ExprStatement | PrintStatement | BlockStatement | IfStatement | WhileStatement | ForStatement
+type Statement = ExprStatement | PrintStatement | BlockStatement | IfStatement | WhileStatement | ForStatement | FunctionStatement
 type Declaration = VariableDeclaration | StatementDeclaration
 
 export {
@@ -128,12 +145,14 @@ export {
     VariableExpr,
     AssignmentExpr,
     LogicalExpr,
+    CallExpr,
     Expr,
     ExprType,
     Statement,
     ExprStatement,
     PrintStatement,
     BlockStatement,
+    FunctionStatement,
     IfStatement,
     WhileStatement,
     ForStatement,

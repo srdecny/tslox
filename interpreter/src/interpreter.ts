@@ -1,4 +1,4 @@
-import { LoxNumber, LoxObject, LoxObjectType } from "./objects";
+import { LoxFunction, LoxNumber, LoxObject, LoxObjectType } from "./objects";
 import {
   BinaryExpr,
   Declaration,
@@ -12,6 +12,7 @@ import {
   VariableExpr,
   AssignmentExpr,
   LogicalExpr,
+  CallExpr,
 } from "./ast";
 import { LoxRuntimeError, Token, TokenType } from "./types";
 import { Statement } from "./ast";
@@ -56,6 +57,13 @@ const evaluate = (statement: Statement) => {
         evaluate(statement.body);
       }
       break;
+    case StatementType.FUNCTION:
+      const funObj = {
+        type: LoxObjectType.FUNCTION,
+        statement,
+        value: undefined
+      } as LoxFunction
+      env.assign(statement.name, funObj);
   }
 };
 
@@ -84,8 +92,36 @@ const interpret = (expression: Expr): LoxObject => {
       return interpretAssignment(expression);
     case ExprType.LOGICAL:
       return interpretLogical(expression);
+    case ExprType.CALL:
+      return interpretCall(expression);
   }
 };
+
+const interpretCall = (expression: CallExpr): LoxObject => {
+  const callee = interpret(expression.callee);
+  if (callee.type === LoxObjectType.NATIVE_FUNCTION) {
+    return callee.call(expression.arguments.map(interpret));
+  }
+  if (callee.type === LoxObjectType.FUNCTION) {
+    const { parameters, body, name } = callee.statement;
+    if (parameters.length !== expression.arguments.length) {
+      throw new LoxRuntimeError(
+        `Expected ${parameters.length} arguments but got ${expression.arguments.length}`
+      );
+    }
+    env.nest()
+    parameters.forEach((param, idx) => {
+      env.define(param, interpret(expression.arguments[idx]));
+    })
+    const value = execute(body);
+    env.pop()
+    return {
+      type: LoxObjectType.NIL,
+      value: undefined
+    }
+  }
+  throw Error(`Cannot call a non-function expr ${callee}`);
+}
 
 const interpretAssignment = (expression: AssignmentExpr): LoxObject => {
   const value = interpret(expression.value);

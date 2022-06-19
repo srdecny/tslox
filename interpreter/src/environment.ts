@@ -1,8 +1,21 @@
-import { LoxObject } from "./objects";
+import { LoxObject, LoxObjectType } from "./objects";
 import { LoxRuntimeError, Token } from "./types";
 
 export default class Environment {
-  scopes: { [key: string]: LoxObject | undefined }[] = [{}];
+    scopes: { [key: string]: LoxObject | undefined }[] = [{
+        "clock": {
+            type: LoxObjectType.NATIVE_FUNCTION,
+            arity: 0,
+            value: undefined,
+            call: (args: any[]) => {
+                return {
+                    type: LoxObjectType.NUMBER,
+                    value: new Date().getTime()
+                }
+            }
+
+      }
+  }];
 
   nest() {
     this.scopes = [{}, ...this.scopes];
@@ -32,4 +45,8 @@ export default class Environment {
       this.scopes[0][name.lexeme] = value;
     }
   }
+
+    define(name: Token, value: LoxObject | undefined): void {
+        this.scopes[0][name.lexeme] = value;
+    }
 }
