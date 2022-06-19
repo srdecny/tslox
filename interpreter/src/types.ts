@@ -1,3 +1,5 @@
+import { LoxObject } from "./objects";
+
 export enum TokenType {
   // Single-character tokens.
   LEFT_PAREN,
@@ -74,5 +76,13 @@ export class LoxRuntimeError extends Error {
   constructor(message: string) {
     super();
     this.message = message;
+  }
+}
+
+export class LoxReturn extends Error {
+  value: LoxObject;
+  constructor(value: LoxObject) {
+    super();
+    this.value = value;
   }
 }

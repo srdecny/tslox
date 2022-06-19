@@ -74,6 +74,8 @@ export const parse = (tokens: Token[]): Declaration[] | undefined => {
       return whileStatement();
     } else if (match(TokenType.FOR)) {
       return forStatement();
+    } else if (match(TokenType.RETURN)) {
+      return returnStatement();
     } else {
       statement = {
         type: StatementType.EXPRESSION,
@@ -92,6 +94,22 @@ export const parse = (tokens: Token[]): Declaration[] | undefined => {
     consume("Expected '}' after block", TokenType.RIGHT_BRACE);
     return declarations;
   };
+
+  const returnStatement = (): Statement => {
+    if (match(TokenType.SEMICOLON)) {
+      return {
+        type: StatementType.RETURN,
+        value: undefined,
+      };
+    } else {
+      const value = expression();
+      consume("Expected ';' after return value", TokenType.SEMICOLON);
+      return {
+        type: StatementType.RETURN,
+        value,
+      };
+    }
+  }
 
   const functionStatement = (): Statement => {
     consume("Expected function name", TokenType.IDENTIFIER);

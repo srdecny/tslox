@@ -14,7 +14,7 @@ import {
   LogicalExpr,
   CallExpr,
 } from "./ast";
-import { LoxRuntimeError, Token, TokenType } from "./types";
+import { LoxRuntimeError, Token, TokenType, LoxReturn } from "./types";
 import { Statement } from "./ast";
 import Environment from "./environment";
 
@@ -57,6 +57,8 @@ const evaluate = (statement: Statement) => {
         evaluate(statement.body);
       }
       break;
+    case StatementType.RETURN:
+      throw new LoxReturn(interpret(statement.value));
     case StatementType.FUNCTION:
       const funObj = {
         type: LoxObjectType.FUNCTION,
@@ -113,12 +115,22 @@ const interpretCall = (expression: CallExpr): LoxObject => {
     parameters.forEach((param, idx) => {
       env.define(param, interpret(expression.arguments[idx]));
     })
-    const value = execute(body);
-    env.pop()
-    return {
+    let retval: LoxObject = {
       type: LoxObjectType.NIL,
       value: undefined
     }
+    try {
+      const value = execute(body);
+    } catch (err) {
+      if (err instanceof LoxReturn) {
+        retval = err.value
+      } else {
+        throw err
+      }
+    }
+    env.pop()
+    return retval
+
   }
   throw Error(`Cannot call a non-function expr ${callee}`);
 }

@@ -72,6 +72,7 @@ enum StatementType {
     WHILE = "WHILE",
     FOR = "FOR",
     FUNCTION = "FUNCTION",
+    RETURN = "RETURN"
 }
 interface ExprStatement {
     type: StatementType.EXPRESSION
@@ -117,6 +118,11 @@ interface FunctionStatement {
     body: Declaration[]
 }
 
+interface ReturnStatement {
+    type: StatementType.RETURN
+    value: Expr
+}
+
 enum DeclarationType {
     VAR = "VAR",
     STATEMENT = "STATEMENT",
@@ -134,7 +140,7 @@ interface StatementDeclaration {
     statement: Statement
 }
 
-type Statement = ExprStatement | PrintStatement | BlockStatement | IfStatement | WhileStatement | ForStatement | FunctionStatement
+type Statement = ExprStatement | PrintStatement | BlockStatement | IfStatement | WhileStatement | ForStatement | FunctionStatement | ReturnStatement
 type Declaration = VariableDeclaration | StatementDeclaration
 
 export {
