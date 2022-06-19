@@ -370,7 +370,7 @@ export const parse = (tokens: Token[]): Declaration[] | undefined => {
 
   const args = (): Expr[] => {
     let args = [];
-    if (!check(TokenType.RIGHT_PAREN)) {
+    if (!match(TokenType.RIGHT_PAREN)) {
       do {
         args.push(expression());
       } while (match(TokenType.COMMA));

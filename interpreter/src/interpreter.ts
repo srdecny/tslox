@@ -63,6 +63,7 @@ const evaluate = (statement: Statement) => {
       const funObj = {
         type: LoxObjectType.FUNCTION,
         statement,
+        closure: env.clone(),
         value: undefined
       } as LoxFunction
       env.assign(statement.name, funObj);
@@ -111,7 +112,8 @@ const interpretCall = (expression: CallExpr): LoxObject => {
         `Expected ${parameters.length} arguments but got ${expression.arguments.length}`
       );
     }
-    env.nest()
+    const oldEnv = env;
+    env = callee.closure
     parameters.forEach((param, idx) => {
       env.define(param, interpret(expression.arguments[idx]));
     })
@@ -120,7 +122,7 @@ const interpretCall = (expression: CallExpr): LoxObject => {
       value: undefined
     }
     try {
-      const value = execute(body);
+      execute(body);
     } catch (err) {
       if (err instanceof LoxReturn) {
         retval = err.value
@@ -128,7 +130,7 @@ const interpretCall = (expression: CallExpr): LoxObject => {
         throw err
       }
     }
-    env.pop()
+    env = oldEnv
     return retval
 
   }

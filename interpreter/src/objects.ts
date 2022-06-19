@@ -1,4 +1,5 @@
 import { FunctionStatement, Statement } from "./ast";
+import Environment from "./environment";
 import { Token } from "./types";
 
 export enum LoxObjectType {
@@ -50,6 +51,7 @@ export interface LoxNativeFunction extends LoxObjectBase {
 export interface LoxFunction extends LoxObjectBase {
   type: LoxObjectType.FUNCTION
   statement: FunctionStatement
+  closure: Environment
   value: undefined
 }
 
